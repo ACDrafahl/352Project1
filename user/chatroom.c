@@ -112,24 +112,25 @@ chatbot(int myId, char *myName)
 int
 main(int argc, char *argv[])
 {
-    if(argc<3||argc>MAX_NUM_CHATBOT+1){
+    if(argc < 3 || argc > MAX_NUM_CHATBOT + 1) {
         printf("Usage: %s <list of names for up to %d chatbots>\n", argv[0], MAX_NUM_CHATBOT);
         exit(1);
     }
 
     pipe1(fd[0]); //create the first pipe #0
-    for(int i=1; i<argc; i++){
+    for(int i = 1; i < argc; i++) {
         pipe1(fd[i]); //create one new pipe for each chatbot
+        botNames[i - 1] = argv[i]; // Store bot name
         //to create child proc #i (emulating chatbot #i)
-        if(fork1()==0){
-            chatbot(i,argv[i]);
+        if(fork1() == 0){
+            chatbot(i, argv[i]);
         }    
     }
 
     //close the fds not used any longer
     close(fd[0][0]); 
-    close(fd[argc-1][1]);
-    for(int i=1; i<argc-1; i++){
+    close(fd[argc - 1][1]);
+    for(int i = 1; i < argc - 1; i++) {
         close(fd[i][0]);
         close(fd[i][1]);
     }
@@ -138,7 +139,7 @@ main(int argc, char *argv[])
     write(fd[0][1], ":START", 6);
 
     //loop: when receive a token from predecessor, pass it to successor
-    while(1){
+    while(1) {
         char recvMsg[MAX_MSG_LEN];
         read(fd[argc-1][0], recvMsg, MAX_MSG_LEN); 
         write(fd[0][1], recvMsg, MAX_MSG_LEN);
@@ -146,7 +147,9 @@ main(int argc, char *argv[])
     }
 
     //exit after all children exit
-    for(int i=1; i<=argc; i++) wait(0);
+    for(int i=1; i<=argc; i++) {
+        wait(0);
+    }
     printf("Now the chatroom closes. Bye bye!\n");
     exit(0);
 
