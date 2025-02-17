@@ -9,6 +9,7 @@
 int fd[MAX_NUM_CHATBOT+1][2]; // Pipes for chatbots
 char *botNames[MAX_NUM_CHATBOT+1]; // Store bot names
 int currentbot = 0; // Current bot index
+int requestedBot = 0; // Requrested bot index
 
 //handle exception
 void
@@ -54,51 +55,55 @@ void
 chatbot(int myId, char *myName)
 {
     // Close unused pipe descriptors (no predecessor or successor)
-    for (int i = 0; i < MAX_NUM_CHATBOT; i++) {
-        if (i != myId - 1) {
-            close(fd[i][0]);
-            close(fd[i][1]);
-        }
+    for(int i = 0; i < myId - 1 ; i++){
+        close(fd[i][0]);
+        close(fd[i][1]);
     }
-
+    close(fd[myId-1][1]);
+    close(fd[myId][0]);
+    
 
     //loop
     while(1){
         //to get msg from the previous chatbot (in loop for now)
         char recvMsg[MAX_MSG_LEN];
-        read(fd[myId - 1][0], recvMsg, MAX_MSG_LEN);
+        read(fd[myId-1][0], recvMsg, MAX_MSG_LEN);
 
-        //if the received msg is not EXIT/exit: continue chatting 
-	    if(strcmp(recvMsg,":EXIT") == 0 || strcmp(recvMsg,":exit") == 0) {
-            exit(0);
-        }
+	    if(strcmp(recvMsg,":EXIT")!=0 && strcmp(recvMsg,":exit")!=0){//if the received msg is not EXIT/exit: continue chatting 
             
-	    printf("Hello, this is chatbot %s. Please type:\n", myName);
+	        printf("Hello, this is chatbot %s. Please type:\n", myName);
 
-        while (1) { // keep chatting until user enters :CHANGE/:change or :EXIT/:exit
-            //get a string from std input and save it to msgBuf 
-            char msgBuf[MAX_MSG_LEN];
-            gets1(msgBuf);
-            
-            printf("I heard you said: %s\n", msgBuf);
+            while (1) { // keep chatting until user enters :CHANGE/:change or :EXIT/:exit
+                //get a string from std input and save it to msgBuf 
+                char msgBuf[MAX_MSG_LEN];
+                gets1(msgBuf);
+                
+                printf("I heard you said: %s\n", msgBuf);
 
-            // If user inputs CHANGE/change: exit loop for bot switch
-            if(strcmp(msgBuf,":CHANGE") == 0 || strcmp(msgBuf,":change") == 0){
-                //pass the msg to the next bot
-                write(fd[myId][1], msgBuf, MAX_MSG_LEN);  // Send change to parent
-                break;
+                // If user inputs CHANGE/change: exit loop for bot switch
+                if(strcmp(msgBuf,":CHANGE")==0||strcmp(msgBuf,":change")==0){
+                    //pass the msg to the next bot
+                    //write(fd[myId][1], msgBuf, MAX_MSG_LEN); 
+                    break;
+                }
+
+                //if user inputs EXIT/exit: exit myself
+                if(strcmp(msgBuf,":EXIT")==0||strcmp(msgBuf,":exit")==0){
+                    //pass the msg to the next bot
+                    write(fd[myId][1], msgBuf, MAX_MSG_LEN); 
+                    exit(0);
+                } 
+
+                printf("Please continue typing:\n");
             }
 
-            //if user inputs EXIT/exit: exit myself
-            if(strcmp(msgBuf,":EXIT") == 0 || strcmp(msgBuf,":exit") == 0){
-                //pass the msg to the next bot
-                write(fd[myId][1], msgBuf, MAX_MSG_LEN); 
-                exit(0);
-            } 
-
-            printf("Please continue typing:\n");
-        }  
+        }else{//if receives EXIT/exit: pass the msg down and exit myself
+            write(fd[myId][1], recvMsg, MAX_MSG_LEN);
+            exit(0);    
+        }
+            
     }
+
 }
 
 
@@ -130,6 +135,8 @@ main(int argc, char *argv[])
         close(fd[i][1]);
     }
 
+    // CP 
+
     //send the START msg to the first chatbot
     write(fd[0][1], ":START", 6);
 
@@ -137,7 +144,7 @@ main(int argc, char *argv[])
     while(1) {
         char recvMsg[MAX_MSG_LEN];
         read(fd[argc - 1][0], recvMsg, MAX_MSG_LEN); // Read message from last bot (predecessor)
-        write(fd[0][1], recvMsg, MAX_MSG_LEN); // Pass message to first bot (successor)
+        //write(fd[currentbot][1], recvMsg, MAX_MSG_LEN); // Pass message to first bot (successor)
 
         // When there's a change request, switch to the next bot
         if (strcmp(recvMsg, ":CHANGE") == 0 || strcmp(recvMsg, ":change") == 0) {
