@@ -141,9 +141,44 @@ main(int argc, char *argv[])
     //loop: when receive a token from predecessor, pass it to successor
     while(1) {
         char recvMsg[MAX_MSG_LEN];
-        read(fd[argc-1][0], recvMsg, MAX_MSG_LEN); 
-        write(fd[0][1], recvMsg, MAX_MSG_LEN);
-	    if(strcmp(recvMsg,":EXIT")==0||strcmp(recvMsg,":exit")==0) break; //break from the loop if the msg is EXIT
+        read(fd[argc - 1][0], recvMsg, MAX_MSG_LEN); // Read message from last bot (predecessor)
+        write(fd[0][1], recvMsg, MAX_MSG_LEN); // Pass message to first bot (successor)
+
+        // When there's a change request, switch to the next bot
+        if (strcmp(recvMsg, ":CHANGE") == 0 || strcmp(recvMsg, ":change") == 0) {
+            // Ask user for the name of the next bot
+            printf("Which bot would you like to chat with? ");
+            char newBot[MAX_MSG_LEN];
+            gets1(newBot);
+
+            // Find the index of the new bot (successor)
+            int newBotIndex = -1;
+            for (int i = 0; i < argc - 1; i++) {
+                if (strcmp(newBot, botNames[i]) == 0) {
+                    newBotIndex = i;
+                    break;
+                }
+            }
+
+            if (newBotIndex == -1) {
+                // If bot doesn't exist, prompt again
+                printf("Bot %s does not exist. Please try again.\n", newBot);
+            }
+            else {
+                // Set new bot as current bot and reroute messages
+                currentbot = newBotIndex;
+                printf("Switched to bot %s.\n", botNames[currentbot]);
+
+
+                // Start chatting with new bot
+                write(fd[currentbot][1], ":START", 6);
+            }
+        }
+
+        //break from the loop if the msg is EXIT
+	    if(strcmp(recvMsg,":EXIT") == 0 || strcmp(recvMsg,":exit") == 0) {
+            break; 
+        }
     }
 
     //exit after all children exit
