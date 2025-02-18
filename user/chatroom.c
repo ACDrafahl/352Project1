@@ -47,6 +47,7 @@ gets1(char msgBuf[MAX_MSG_LEN]){
     gets(msgBuf,MAX_MSG_LEN);
 	int len = strlen(msgBuf);
 	msgBuf[len-1]='\0';
+    printf("CHECK: gets1 received: %s\n", msgBuf);
 }
 
 // Function to extract the message before the character '!'
@@ -148,12 +149,18 @@ chatbot(int myId, char *myName)
     // If the received bot name is not the same as the current bot's name, 
     // pass the message to the next bot
     if (strcmp(recvdBotName, myName) != 0) {
+        // Test: Print that the bot name doesn't match
+        printf("Received bot name %s does not match my name %s. Passing message to next bot.\n", recvdBotName, myName);
         write(fd[myId][1], recvMsg, MAX_MSG_LEN);
         exit(0);
     }
 
+    // Test that the code ran up to this point
+    printf("1. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
+
     //loop
     while(1){
+        printf("2. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
         //to get msg from the previous chatbot (in loop for now)
         
 
@@ -169,15 +176,29 @@ chatbot(int myId, char *myName)
         int newBotIndex = -1;
 
         if(strcmp(recvMsg,":EXIT")!=0 && strcmp(recvMsg,":exit")!=0){//if the received msg is not EXIT/exit: continue chatting 
+            printf("3. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
             
             printf("Hello, this is chatbot %s. Please type:\n", myName);
 
+            printf("4. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
+
             while (1) { // keep chatting until user enters :CHANGE/:change or :EXIT/:exit
                 //get a string from std input and save it to msgBuf 
+                printf("5. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
                 char msgBuf[MAX_MSG_LEN];
                 gets1(msgBuf);
+
+                printf("6. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
                 
                 printf("I heard you said: %s\n", msgBuf);
+
+                printf("7. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
+
+                if(strcmp(msgBuf, ":name") == 0) {
+                    printf("8. Received bot name %s matches my name %s. Continuing chat.\n", recvdBotName, myName);
+                    // Print the bot's name
+                    printf("My name is %s.\n", myName);
+                }
 
                 // If user inputs CHANGE/change: validate bot and switch
                 if(strcmp(msgBuf,":CHANGE") == 0 || strcmp(msgBuf,":change") == 0) {
@@ -207,21 +228,24 @@ chatbot(int myId, char *myName)
                         if (strcmp(myName, newBot) == 0) {
                             printf("You are already chatting with %s.\n", botNames[newBotIndex]);
                             newBotIndex = -1; // Reset for next change
+                            write(fd[myId][1], msgBuf, MAX_MSG_LEN);
                             break;
                         }
-
                         // If bot exists and is not the current bot, switch
-                        if (newBotIndex != -1 && newBotIndex != myId - 1) {
+                        else if (newBotIndex != -1 && newBotIndex != myId - 1) {
                             //pass the msg to the next bot with a name added
                             newBotIndex = -1; // Reset for next change
                             strcat(msgBuf, "!");
                             strcat(msgBuf, newBot);
+                            // Test: Print message to be sent
+                            printf("\nMessage to be sent: %s\n\n", msgBuf);
                             write(fd[myId][1], msgBuf, MAX_MSG_LEN); 
                             break;
                         }
-
                         // If bot doesn't exist, prompt again
-                        printf("Bot %s does not exist. Please try again.\n", newBot);
+                        else if (newBotIndex == -1) {
+                            printf("Bot %s does not exist. Please try again.\n", newBot);
+                        }
                     }
                 } else if(strcmp(msgBuf,":EXIT")==0 || strcmp(msgBuf,":exit")==0) {
                     //if user inputs EXIT/exit: exit myself
@@ -265,6 +289,9 @@ main(int argc, char *argv[])
     // Bot count
     botCount = argc - 1;
 
+    // Int to cycle through bots
+    int currentbot = 1;
+
     pipe1(fd[0]); //create the first pipe #0
     // Create pipes and store names
     for(int i = 1; i < argc; i++) {
@@ -291,8 +318,13 @@ main(int argc, char *argv[])
     //FIX THIS, THIS IS WHERE THE PROBLEM IS
     // String to hold START!
     char startMsg[MAX_MSG_LEN] = ":START!";
-    // Add the first bot name to the string
-    strcat(startMsg, argv[1]);
+    // Add the current bot name to the string
+    strcat(startMsg, argv[currentbot]);
+    // // Increment the current bot index for the next message cycle
+    // currentbot = (currentbot + 1) % botCount;
+    // if (currentbot == 0) {
+    //     currentbot = 1; // Reset to 1 to avoid argv[0]
+    // }
 
     // Get length of the whole string
     int len = strlen(startMsg);
@@ -310,22 +342,27 @@ main(int argc, char *argv[])
     // extractName(startMsg, extractedName);
     // printf("Extracted name: %s\n", extractedName);
 
-
     //send START![firstBotName] to the first bot
     write(fd[0][1], startMsg, len);
 
     //loop: when receive a token from predecessor, pass it to successor
     while(1) {
+        // Test: Print that the loop is running
+        printf("LOOP RUNNING\n");
         char recvMsg[MAX_MSG_LEN];
-        read(fd[argc-1][0], recvMsg, MAX_MSG_LEN); 
-        write(fd[0][1], recvMsg, MAX_MSG_LEN);
+        //strcat(recvMsg, argv[currentbot]);
+        printf("[DEBUG] Waiting for message...\n");
+        int bytesRead = read(fd[argc-1][0], recvMsg, MAX_MSG_LEN);
+        printf("[DEBUG] Received message: %s (bytes: %d)\n", recvMsg, bytesRead);
 	    if(strcmp(recvMsg,":EXIT")==0||strcmp(recvMsg,":exit")==0) break; //break from the loop if the msg is EXIT
+        write(fd[0][1], recvMsg, MAX_MSG_LEN);
     }
 
     //exit after all children exit
     for(int i=1; i<=argc; i++) {
         wait(0);
     }
+
     printf("Now the chatroom closes. Bye bye!\n");
     exit(0);
 
