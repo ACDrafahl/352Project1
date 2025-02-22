@@ -104,6 +104,12 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  // New variables for calling process statistics
+  int trapcount;
+  int syscallcount;
+  int devintcount;
+  int timerintcount;
 };
 
 extern struct proc proc[NPROC];

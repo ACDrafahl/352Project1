@@ -99,13 +99,14 @@ sys_getppid(void){
 
 uint64 
 sys_getcpids(void){ 
-  // struct file *f;
-  // int p;
-  // uint64 n;
-  // argaddr(1, &p);
-  // argint(2, &n);
+  struct file *f;
+  int p;
+  uint64 n;
 
-  return 0;
+  argaddr(0, &p);
+  argint(1, &n);
+
+  return 0; // temp
 } 
 
 /*The system call for getcpid is int getcpids(int *cpids, int max); 
@@ -166,6 +167,7 @@ sys_getpaddr(void){
 
 uint64 
 sys_gettraphistory(void){ 
-return 0;
+  int trapcount, syscallcount, devintcount, timerintcount;
+  return 0;
 } 
 

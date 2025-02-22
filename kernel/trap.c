@@ -51,7 +51,8 @@ usertrap(void)
   p->trapframe->epc = r_sepc();
   
   if(r_scause() == 8){
-    // system call
+    // system call count
+    p->syscallcount++;
 
     if(killed(p))
       exit(-1);
@@ -66,7 +67,8 @@ usertrap(void)
 
     syscall();
   } else if((which_dev = devintr()) != 0){
-    // ok
+    // device interrupt count
+    p->devintcount++;
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
     printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
@@ -77,8 +79,11 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2) {
+    // timer interrupt count
+    p->timerintcount++;
     yield();
+  }
 
   usertrapret();
 }
