@@ -22,6 +22,12 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+// new system calls
+int getppid(void);
+int getcpids(int *cpids, int max);
+int getpaddr(void *va);
+int gettraphistory(int *trapcount, int *syscallcount, int *devintcount, 
+    int *timerintcount);
 
 // ulib.c
 int stat(const char*, struct stat*);
