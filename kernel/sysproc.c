@@ -99,12 +99,12 @@ sys_getppid(void){
 
 uint64 
 sys_getcpids(void){ 
-  struct file *f;
-  int p;
-  uint64 n;
+  // struct file *f;
+  // int p;
+  // uint64 n;
 
-  argaddr(0, &p);
-  argint(1, &n);
+  // argaddr(0, &p);
+  // argint(1, &n);
 
   return 0; // temp
 } 
@@ -167,7 +167,26 @@ sys_getpaddr(void){
 
 uint64 
 sys_gettraphistory(void){ 
-  int trapcount, syscallcount, devintcount, timerintcount;
+  // copy the current process’ trapcount, syscallcount, devintcount and timerintcount to the addresses that are passed in to this system call as arguments.
+  uint64 trapcount, syscallcount, devintcount, timerintcount;
+  argaddr(0, &trapcount);
+  argaddr(1, &syscallcount);
+  argaddr(2, &devintcount);
+  argaddr(3, &timerintcount);
+  struct proc *p = myproc();
+  
+  if (copyout(p->pagetable, trapcount, (char *)&p->trapcount, sizeof(p->trapcount)) < 0) {
+    return -1;
+  }
+  if (copyout(p->pagetable, syscallcount, (char *)&p->syscallcount, sizeof(p->syscallcount)) < 0) {
+    return -1;
+  }
+  if (copyout(p->pagetable, devintcount, (char *)&p->devintcount, sizeof(p->devintcount)) < 0) {
+    return -1;
+  }
+  if (copyout(p->pagetable, timerintcount, (char *)&p->timerintcount, sizeof(p->timerintcount)) < 0) {
+    return -1;
+  }
   return 0;
 } 
 

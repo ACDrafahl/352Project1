@@ -53,6 +53,7 @@ usertrap(void)
   if(r_scause() == 8){
     // system call count
     p->syscallcount++;
+    p->trapcount++;
 
     if(killed(p))
       exit(-1);
@@ -69,6 +70,7 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // device interrupt count
     p->devintcount++;
+    p->trapcount++;
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
     printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
