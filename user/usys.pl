@@ -36,6 +36,7 @@ entry("getpid");
 entry("sbrk");
 entry("sleep");
 entry("uptime");
+# new entries
 entry("getppid");
 entry("getcpids");
 entry("getpaddr");

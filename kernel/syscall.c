@@ -101,6 +101,7 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+// New system call prototypes
 extern uint64 sys_getppid(void);
 extern uint64 sys_getcpids(void);
 extern uint64 sys_getpaddr(void);
@@ -129,6 +130,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_unlink]  sys_unlink,
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
+// New mappings
 [SYS_close]   sys_close,
 [SYS_getppid] sys_getppid,
 [SYS_getcpids] sys_getcpids,

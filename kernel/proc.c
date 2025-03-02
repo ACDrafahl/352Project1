@@ -169,6 +169,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  // resetting variables
   p->trapcount = 0;
   p->syscallcount = 0;
   p->devintcount = 0;

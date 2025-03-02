@@ -112,4 +112,5 @@ struct proc {
   int timerintcount;
 };
 
+// Process table
 extern struct proc proc[NPROC];

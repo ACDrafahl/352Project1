@@ -94,54 +94,40 @@ sys_uptime(void)
 
 uint64 
 sys_getppid(void){ 
+  // Get the parent process ID of the calling process and return it.
   return myproc()->parent->pid;
 } 
 
 uint64 
 sys_getcpids(void){ 
-  // struct file *f;
-  // int p;
-  // uint64 n;
+  int max;
+  uint64 cpids;
+  struct proc *p = myproc();
+  argaddr(0, &cpids);
+  argint(1, &max);
+  
+  // Get the child processes of the calling process
+  struct proc *child = proc;
+  int count = 0;
+  
+  // Iterate through the process table to find child processes
+  for (int i = 0; i < NPROC; i++) {
+    // Check if the process is a child of the calling process
+    if (child[i].parent == p) {
+      if (count < max) {
+        if (copyout(p->pagetable, cpids + count * sizeof(int), (char *)&child[i].pid, sizeof(int)) < 0) {
+          return -1;
+        }
+        count++;
+      } else {
+        break;
+      }
+    }
+  }
+  
+  return count; // Return the number of child processes copied
 
-  // argaddr(0, &p);
-  // argint(1, &n);
-
-  return 0; // temp
 } 
-
-/*The system call for getcpid is int getcpids(int *cpids, int max); 
- 
-Here, argument cpids is a pointer to an array of integers and 
-argument max is the number of elements in the array. Before 
-making this system call, the calling process should have set 
-up the array.   
- 
-This system call returns the number (up to max) of child 
-processes of the calling process; the ids of these child 
-processes are returned in the array pointed to by argument 
-cpids. In addition, argument max specifies the maximum number 
-of the child processes which this system call need to return 
-the information of.  
----------------------------------------------------------------
-the system call for write is int write(int, const void*, int);
-uint64
-sys_write(void)
-{
-  struct file *f;
-  int n;
-  uint64 p;
-  
-  argaddr(1, &p);
-  argint(2, &n);
-  if(argfd(0, 0, &f) < 0)
-    return -1;
-
-  return filewrite(f, p, n);
-}
-
-note: filewrite is int filewrite(struct file*, uint64, int n);
-  
-*/
 
 uint64 
 sys_getpaddr(void){ 
@@ -175,6 +161,7 @@ sys_gettraphistory(void){
   argaddr(3, &timerintcount);
   struct proc *p = myproc();
   
+  // Copy the values from the process structure to the addresses passed in
   if (copyout(p->pagetable, trapcount, (char *)&p->trapcount, sizeof(p->trapcount)) < 0) {
     return -1;
   }
