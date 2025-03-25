@@ -110,6 +110,11 @@ struct proc {
   int syscallcount;
   int devintcount;
   int timerintcount;
+
+  // 3.1.1 New variables for scheduler
+  int nice;
+  int runtime;
+  int vruntime;
 };
 
 // Process table

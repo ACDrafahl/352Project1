@@ -26,6 +26,73 @@ extern char trampoline[]; // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
+// 3.1.2 System parameters for scheduler
+int cfs_sched_latency = 128; // Default length of scheduling latency
+int cfs_max_timeslice = 16; //max number of ticks for a process per scheduling latency
+int cfs_min_timeslice = 1; //min number of ticks for a process per scheduling latency
+
+// 3.1.3 nice-to-weight conversion conversion table
+int nice_to_weight[40] = {
+  88761, 71755, 56483, 46273, 36291, /*for nice = -20, …, -16*/
+  29154, 23254, 18705, 14949, 11916, /*for nice = -15, …, -11*/
+  9548, 7620, 6100, 4904, 3906, /*for nice = -10, …, -6*/
+  3121, 2501, 1991, 1586, 1277, /*for nice = -5, …, -1*/
+  1024, 820, 655, 526, 423, /*for nice = 0, …, 4*/
+  335, 272, 215, 172, 137, /*for nice = 5, …, 9*/
+  110, 87, 70, 56, 45, /*for nice = 10, …, 14*/
+  36, 29, 23, 18, 15, /*for nice = 15, …, 19*/
+};
+
+// 3.1.4 New variables for scheduler
+int cfs = 0; /* indicate if the fair scheduler is the current scheduler, 0 is the 
+              * default setting indicates that the current scheduler is the default 
+              * RR scheduler while 1 indicates the current scheduler is this fair scheduler */
+struct proc *cfs_current_proc = 0; /* the process currently scheduled to run by the fair 
+                                  * scheduler and is initialized to 0 meaning there is no 
+                                  * such process */
+int cfs_proc_timeslice_len = 0; /* number of ticks assigned to the above (current) 
+                               * process if it exists */
+int cfs_proc_timeslice_left = 0; /* number of ticks that the above process can still run if
+                                * it exists */
+
+// 3.1.5 Help function
+int weight_sum(){
+  //to add: compute the sum of the weights of all the RUNNABLE processes,
+  //and return the sum
+  int sum = 0;
+  struct proc *p;
+  for (p = proc; p < &proc[NPROC]; p++) {
+    if (p->state == RUNNABLE) {
+      sum += nice_to_weight[p->nice + 20];
+    } 
+  }
+
+  return sum;
+}
+
+// 3.1.5 Help function
+struct proc* shortest_runtime_proc(){
+  //to add: find the RUNNABLE process that has the shortest vruntime and return it.
+  //If no process is RUNNABLE, return 0.
+  int shortest_runtime = 2147483647;
+  struct proc *p;
+  struct proc *p_shortest = 0;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    if (p->state == RUNNABLE) {
+      if (p->vruntime < shortest_runtime) {
+        shortest_runtime = p->vruntime;
+        p_shortest = p;
+      }
+    }
+  }
+  
+  return p_shortest;
+
+}
+
+// 3.1.6 Scheduler function
+
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
@@ -174,6 +241,10 @@ freeproc(struct proc *p)
   p->syscallcount = 0;
   p->devintcount = 0;
   p->timerintcount = 0;
+  // 3.1.1 initialize scheduler variables
+  p->nice = 0;
+  p->runtime = 0;
+  p->vruntime = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
