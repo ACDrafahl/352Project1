@@ -177,3 +177,23 @@ sys_gettraphistory(void){
   return 0;
 } 
 
+// 3.3.1
+uint64 sys_nice(void){ 
+  return 0;
+}
+
+// 3.3.2
+uint64 sys_getruntime(void){ 
+  return 0;
+}
+
+// 3.3.3
+uint64 sys_startcfs(void){ 
+  return 0;
+}
+
+// 3.3.3
+uint64 sys_stopcfs(void){ 
+  return 0;
+}
+

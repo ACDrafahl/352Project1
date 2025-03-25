@@ -643,7 +643,7 @@ void old_scheduler(struct cpu *c) {
   }
 }
 
-// The scheduler runs the original RR scheduler (if cfs==0) or our new fair scheduler (if cfs==1)
+// 3.2 The scheduler runs the original RR scheduler (if cfs==0) or our new fair scheduler (if cfs==1)
 void scheduler(void)
 {
   struct cpu *c = mycpu();

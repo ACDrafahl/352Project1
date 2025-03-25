@@ -25,4 +25,9 @@
 #define SYS_getcpids 23
 #define SYS_getpaddr 24
 #define SYS_gettraphistory 25
+// Project 1.C system call numbers
+#define SYS_nice 26 // 3.3.1
+#define SYS_getruntime 27 // 3.3.2
+#define SYS_startcfs 28 // 3.3.3
+#define SYS_stopcfs 29 // 3.3.3
 

@@ -136,6 +136,11 @@ static uint64 (*syscalls[])(void) = {
 [SYS_getcpids] sys_getcpids,
 [SYS_getpaddr] sys_getpaddr,
 [SYS_gettraphistory] sys_gettraphistory,
+// Project 1.C mappings
+[SYS_nice] sys_nice, // 3.3.1
+[SYS_getruntime] sys_getruntime, // 3.3.2
+[SYS_startcfs] sys_startcfs, // 3.3.3
+[SYS_stopcfs] sys_stopcfs, // 3.3.3
 };
 
 void

@@ -41,3 +41,8 @@ entry("getppid");
 entry("getcpids");
 entry("getpaddr");
 entry("gettraphistory");
+# Project 1.C entries
+entry("nice"); # 3.3.1
+entry("getruntime"); # 3.3.2
+entry("startcfs"); # 3.3.3
+entry("stopcfs"); # 3.3.3

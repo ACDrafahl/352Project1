@@ -28,6 +28,11 @@ int getcpids(int *cpids, int max);
 int getpaddr(void *va);
 int gettraphistory(int *trapcount, int *syscallcount, int *devintcount, 
     int *timerintcount);
+// Project 1.C system calls
+int nice(int new_nice); // 3.3.1
+int getruntime(int *runtime, int *vruntime); // 3.3.2
+int startcfs(int latency, int max, int min); // 3.3.3
+int stopcfs(void); // 3.3.3
 
 // ulib.c
 int stat(const char*, struct stat*);
