@@ -1,101 +1,82 @@
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
 
-
-uint64 pa;
-
-int
-routine()
+void
+panic(char *s)
 {
-    int stack_value_2;
-
-    void *ptr = (void *)&stack_value_2;
-    pa = getpaddr(ptr);
-    printf("stack_value_2 va: %p ==> pa: %lx\n", ptr, pa);
-
-    
-    return 0;
+  fprintf(2, "%s\n", s);
+  exit(1);
 }
 
 int
-main(int argc, char *argv[])
+fork1(void)
 {
-    
-    printf("my id: %d\n", getpid());
-
-
-    //test 1: system call getppid    
-    
-    printf("my parent: %d\n", getppid());
-
-
-
-    //test 2: system call getcpids
-
-    for(int i=0; i<10; i++){
-        int ret = fork();
-        if(ret==0){
-            sleep(10);
-            exit(0);
-        }else if(ret>0){
-            printf("create a child: %d\n", ret);
-        }else{
-            printf("something goes wrong!");
-            exit(1);
-        } 
-    }
-
-    int cpids[10];
-    int nchild = getcpids(cpids,20);
-
-    printf("nchild=%d\n", nchild);
-    for(int i=0; i<nchild; i++) printf("child #%d: %d\n", i, cpids[i]);
-
-    for(int i=0; i<10; i++) wait(0);
-
-
-
-
-    //testing 3: system call getpaddr
-    
-    void *ptr = (void *)main;
-    pa = getpaddr(ptr);
-    printf("code segment va: %p ==> pa: %lx\n", ptr, pa);
-
-    ptr = (void *)&pa;
-    pa = getpaddr(ptr);
-    printf("static_value va: %p ==> pa: %lx\n", ptr, pa);
-
-    int stack_value_1;
-    ptr = (void *)&stack_value_1;
-    pa = getpaddr(ptr);
-    printf("stack_value_1 va: %p ==> pa: %lx\n", ptr, pa);
-
-    routine();
-    routine();
-
-    ptr = sbrk(4096);
-    pa = getpaddr(ptr);
-    printf("heap_block_1 va: %p ==> pa: %lx\n", ptr, pa);
-
-    ptr = sbrk(4096);
-    pa = getpaddr(ptr);
-    printf("heap_block_2 va: %p ==> pa: %lx\n", ptr, pa);
-
-
-
-    //test 4: system call gettraphistory
-
-    double x=0.0;
-    for(int i=0; i<100000; i++)
-        for(int j=0; j<100000; j++)
-            x+=(i*100000.0+j*1.0)*(j*100000.0+i*1.0);
-    
-    int trapcount, syscallcount, devintcount, timerintcount;
-    gettraphistory(&trapcount, &syscallcount, &devintcount, &timerintcount);
-    printf("trapcount=%d, syscallcount=%d, devintcount=%d, timerintcount=%d\n",
-        trapcount,syscallcount,devintcount,timerintcount
-    );
-
-
+  int pid;
+  pid = fork();
+  if(pid == -1)
+    panic("fork");
+  return pid;
 }
+
+
+int
+main(int argc, char* argv[])
+{
+
+	//set a pipe to make processes output mutually exclusive 
+	int fd[2];
+	if (pipe(fd) == -1) panic("pipe");
+	char msg[128]="Hi";
+
+	//set up parent process and start cfs
+	nice(3);
+	startcfs(100,20,2);
+	printf("\n[START] Process (pid:%d) has started cfs!\n\n", getpid());
+
+	//create 10 child processes: first 5 have lower priority than the last 5
+        int ret=0;
+        for(int i=0; i<10; i++){
+                ret=fork1();
+                if(ret==0){
+                        if(i<5) nice(10);
+			else nice(5);
+                        break;
+                }
+        }
+	int mypid = getpid();
+        printf("[PRIORITY] process (pid=%d): has nice = %d\n", mypid,nice(-30));
+
+
+	//do intensive computation
+        int t=0;
+        while(t++<2){
+                double x=987654321.9;
+                for(int i=0; i<100000000; i++){
+                        x /= 12345.6789;
+                }
+        }
+
+
+	//when parent is done (which should be earlier than children due to its high priority), it stop CFS and then every one summarize their actual and virtual runtime during CFS
+	if(ret>0){
+		stopcfs();
+		printf("\n[STOP] Process (pid=%d): has stopped cfs\n\n", mypid);
+		write(fd[1],msg,128);
+		for(int i=0; i<10; i++) wait(0);
+	}
+
+
+	//every one summarizies its actual and virtual runtime during CFS; note: pipe is used for mutual exclusion
+	read(fd[0],msg,128);
+	int runtime[2];
+        if(getruntime(&runtime[0], &runtime[1])==0)
+            printf("[SUMMARY] process (pid=%d): finishes comutation. During CFS: actual runtime = %d; virtual runtime = %d\n", mypid, runtime[0], runtime[1]);
+        else
+            printf("\n [ERROR] Process (pid=%d): something wrong with getruntime!\n\n", mypid);
+	write(fd[1],msg,128);
+
+        return 0;
+}
+
+

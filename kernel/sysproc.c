@@ -179,21 +179,70 @@ sys_gettraphistory(void){
 
 // 3.3.1
 uint64 sys_nice(void){ 
-  return 0;
+  int new_nice;
+  argint(0, &new_nice);
+  struct proc *p = myproc();
+  // If new_nice is an integer between –20 and 19,
+  // the caller’s nice is set to new_nice.
+  // Otherwise, the nice value is unchanged.
+  if (new_nice >= -20 && new_nice <= 19) {
+    p->nice = new_nice;
+  }
+  return p->nice; // Return the current nice value
 }
 
 // 3.3.2
+// returns the caller’s actual runtime and virtual runtime to the integer variables
+// pointed to by the arguments, respectively.
 uint64 sys_getruntime(void){ 
+  int runtime, vruntime;
+  argaddr(0, &runtime);
+  argaddr(1, &vruntime);
+  struct proc *p = myproc();
+
+  // Copy the values from the process structure to the addresses passed in
+  if (copyout(p->pagetable, runtime, (char *)&p->runtime, sizeof(p->runtime)) < 0) {
+    return -1;
+  }
+  if (copyout(p->pagetable, vruntime, (char *)&p->vruntime, sizeof(p->vruntime)) < 0) {
+    return -1;
+  }
   return 0;
 }
 
 // 3.3.3
+// Starts the share scheduler by setting the variable cfs to 1 in proc.c. It also set the
+// parameters cfs_sched_latency, cfs_max_timeslice and cfs_min_timeslice to the arguments,
+// respectively. It returns 1. 
 uint64 sys_startcfs(void){ 
-  return 0;
+  int latency, max, min;
+  argint(0, &latency);
+  argint(1, &max);
+  argint(2, &min);
+
+  cfs = 1; // Start the CFS scheduler
+
+  cfs_sched_latency = latency;
+  cfs_max_timeslice = max;
+  cfs_min_timeslice = min;
+  
+  return 1; // Return success
 }
 
 // 3.3.3
+// stops the share scheduler by setting the variable cfs to 0 in proc.c. It returns 1. 
 uint64 sys_stopcfs(void){ 
-  return 0;
+  cfs = 0; // Stop the CFS scheduler
+  return 1; // Return success
 }
 
+/*int latency, max, min;
+  argaddr(0, latency);
+  argaddr(1, max);
+  argaddr(2, min);
+  struct proc *p = myproc();
+
+  if (copyout(p->pagetable, p->devintcount, (char *)&p->vruntime, sizeof(p->vruntime)) < 0) {
+    return -1;
+  }
+*/

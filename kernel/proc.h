@@ -119,3 +119,8 @@ struct proc {
 
 // Process table
 extern struct proc proc[NPROC];
+
+extern int cfs;
+extern int cfs_sched_latency;
+extern int cfs_max_timeslice;
+extern int cfs_min_timeslice;

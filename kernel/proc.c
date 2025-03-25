@@ -153,7 +153,7 @@ void cfs_scheduler(struct cpu *c) {
       // 3.1.6 Get the total weight of all runnable processes for time slice calculation
       int total_weight = weight_sum();
       // 3.1.6 Calculate timeslice length
-      cfs_proc_timeslice_len = ceil((double)cfs_sched_latency * weight / total_weight);
+      cfs_proc_timeslice_len = (double)cfs_sched_latency * weight / total_weight; // ceil?
       // 3.1.6 Make sure the length is within the bounds
       if (cfs_proc_timeslice_len < cfs_min_timeslice) {
         cfs_proc_timeslice_len = cfs_min_timeslice;
