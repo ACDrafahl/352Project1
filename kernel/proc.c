@@ -144,27 +144,27 @@ void cfs_scheduler(struct cpu *c) {
     // Get the process with the shortest runtime to set the next process
     struct proc *next_proc = shortest_runtime_proc();
 
-    // If the shortest runtime method returned a valid process
+    // 3.1.6 If the shortest runtime method returned a valid process
     if (next_proc != 0) {
-      // Set the current process to the next process
+      // 3.1.6 Set the current process to the next process
       cfs_current_proc = next_proc;
-      // Get the weight of the process for time slice calculation
+      // 3.1.6 Get the weight of the process for time slice calculation
       int weight = nice_to_weight[next_proc->nice + 20];
-      // Get the total weight of all runnable processes for time slice calculation
+      // 3.1.6 Get the total weight of all runnable processes for time slice calculation
       int total_weight = weight_sum();
-      // Calculate timeslice length
+      // 3.1.6 Calculate timeslice length
       cfs_proc_timeslice_len = ceil((double)cfs_sched_latency * weight / total_weight);
-      // Make sure the length is within the bounds
+      // 3.1.6 Make sure the length is within the bounds
       if (cfs_proc_timeslice_len < cfs_min_timeslice) {
         cfs_proc_timeslice_len = cfs_min_timeslice;
       }
       else if (cfs_proc_timeslice_len > cfs_max_timeslice) {
         cfs_proc_timeslice_len = cfs_max_timeslice;
       }
-      // Set the left side of the timeslice to the calculated length
+      // 3.1.6 Set the left side of the timeslice to the calculated length
       cfs_proc_timeslice_left = cfs_proc_timeslice_len;
-      // prints for testing and debugging purposes
-      printf("[DEBUG CFS] Process %d will run for a timeslice of %d ticks next!\n",
+      // 3.1.6 prints for testing and debugging purposes
+      printf("[DEBUG 3.1.6] Process %d will run for a timeslice of %d ticks next!\n",
       c->proc->pid,
       cfs_proc_timeslice_len);
     }
@@ -622,44 +622,40 @@ int wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
+
+// 3.2 The original RR scheduler is moved to old_scheduler
+void old_scheduler(struct cpu *c) {
+  struct proc *p;
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->state == RUNNABLE) {
+      // Switch to chosen process. It is the process's job
+      // to release its lock and then reacquire it
+      // before jumping back to us.
+      p->state = RUNNING;
+      c->proc = p;
+      swtch(&c->context, &p->context);
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
+    release(&p->lock);
+  }
+}
+
+// The scheduler runs the original RR scheduler (if cfs==0) or our new fair scheduler (if cfs==1)
 void scheduler(void)
 {
-  struct proc *p;
   struct cpu *c = mycpu();
-
   c->proc = 0;
-  for (;;)
-  {
-    // The most recent process to run may have had interrupts
-    // turned off; enable them to avoid a deadlock if all
-    // processes are waiting.
+  for (;;) {
+    // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-
-    int found = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->state == RUNNABLE)
-      {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-        found = 1;
-      }
-      release(&p->lock);
+    if (cfs) {
+      cfs_scheduler(c);
     }
-    if (found == 0)
-    {
-      // nothing to run; stop running on this core until an interrupt.
-      intr_on();
-      asm volatile("wfi");
+    else {
+      old_scheduler(c);
     }
   }
 }
