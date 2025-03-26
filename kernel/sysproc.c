@@ -195,7 +195,7 @@ uint64 sys_nice(void){
 // returns the caller’s actual runtime and virtual runtime to the integer variables
 // pointed to by the arguments, respectively.
 uint64 sys_getruntime(void){ 
-  int runtime, vruntime;
+  uint64 runtime, vruntime;
   argaddr(0, &runtime);
   argaddr(1, &vruntime);
   struct proc *p = myproc();
@@ -235,14 +235,3 @@ uint64 sys_stopcfs(void){
   cfs = 0; // Stop the CFS scheduler
   return 1; // Return success
 }
-
-/*int latency, max, min;
-  argaddr(0, latency);
-  argaddr(1, max);
-  argaddr(2, min);
-  struct proc *p = myproc();
-
-  if (copyout(p->pagetable, p->devintcount, (char *)&p->vruntime, sizeof(p->vruntime)) < 0) {
-    return -1;
-  }
-*/

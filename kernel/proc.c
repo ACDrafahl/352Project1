@@ -125,7 +125,7 @@ void cfs_scheduler(struct cpu *c) {
     // 3.1.6 Increment the process’ (actual) runtime
     cfs_current_proc->runtime += inc;
     // prints for testing and debugging purposes
-    printf("[DEBUG CFS] Process % d used % d ticks of its assigned timeslice(totally % d ticks) and is swapped out !\n",
+    printf("[DEBUG CFS] Process %d used %d ticks of its assigned timeslice(totally %d ticks) and is swapped out!\n",
            cfs_current_proc->pid,
            cfs_proc_timeslice_len - cfs_proc_timeslice_left,
            cfs_proc_timeslice_len);
@@ -153,7 +153,10 @@ void cfs_scheduler(struct cpu *c) {
       // 3.1.6 Get the total weight of all runnable processes for time slice calculation
       int total_weight = weight_sum();
       // 3.1.6 Calculate timeslice length
-      cfs_proc_timeslice_len = (double)cfs_sched_latency * weight / total_weight; // ceil?
+      cfs_proc_timeslice_len = cfs_sched_latency * weight / total_weight; // ceil?
+      // printf("[DEBUG timeslice len] cfs_proc_timeslice_len is %d before hard coding\n", cfs_proc_timeslice_len);
+      // TEST LINE, DELETE LATER
+      //cfs_proc_timeslice_len = 10;
       // 3.1.6 Make sure the length is within the bounds
       if (cfs_proc_timeslice_len < cfs_min_timeslice) {
         cfs_proc_timeslice_len = cfs_min_timeslice;
@@ -161,12 +164,16 @@ void cfs_scheduler(struct cpu *c) {
       else if (cfs_proc_timeslice_len > cfs_max_timeslice) {
         cfs_proc_timeslice_len = cfs_max_timeslice;
       }
+
       // 3.1.6 Set the left side of the timeslice to the calculated length
       cfs_proc_timeslice_left = cfs_proc_timeslice_len;
-      // 3.1.6 prints for testing and debugging purposes
-      printf("[DEBUG 3.1.6] Process %d will run for a timeslice of %d ticks next!\n",
+      // 3.1.6 Set c->proc to the next process
+      c->proc = cfs_current_proc;
+
+      // Prints for testing and debugging purposes
+      /* printf("[DEBUG 3.1.6] Process %d will run for a timeslice of %d ticks next!\n",
       c->proc->pid,
-      cfs_proc_timeslice_len);
+      cfs_proc_timeslice_len); */
     }
 
 

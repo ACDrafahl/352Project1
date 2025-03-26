@@ -106,6 +106,11 @@ extern uint64 sys_getppid(void);
 extern uint64 sys_getcpids(void);
 extern uint64 sys_getpaddr(void);
 extern uint64 sys_gettraphistory(void);
+// Project 1.C system call prototypes
+extern uint64 sys_nice(void); // 3.3.1
+extern uint64 sys_getruntime(void); // 3.3.2
+extern uint64 sys_startcfs(void); // 3.3.3
+extern uint64 sys_stopcfs(void); // 3.3.3
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
